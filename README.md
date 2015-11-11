@@ -1,5 +1,7 @@
 # Perl6-HTTP-Signature
 
+[![Build Status](https://travis-ci.org/pierre-vigier/Perl6-HTTP-Signature.svg?branch=master)](https://travis-ci.org/pierre-vigier/Perl6-HTTP-Signature)
+
 ## SYNOPSIS
 
 ALPHA
