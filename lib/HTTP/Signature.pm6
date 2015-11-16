@@ -71,9 +71,8 @@ method !verify {
     given $.algorithm {
         when /hmac\-sha256/ { return True if $!signature eq hmac($.secret, $!signing-string, &sha256); }
         when /rsa\-sha256/ {
-            say $!secret;
             my $rsa = OpenSSL::RSAKey.new(public-pem => $!secret);
-            return $rsa.verify( $!signing-string.encode, $!signature, :sha256);
+            return $rsa.verify( $!signing-string.encode, decode-base64($!signature, :buf) );
         }
     }
     return False;
