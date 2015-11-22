@@ -5,9 +5,9 @@
 ## SYNOPSIS
 
 ALPHA
-Implementation of http signature as defined in (IETFF draft version 5)[http://tools.ietf.org/html/draft-cavage-http-signatures-05]
+Implementation of http signature as defined in [IETFF draft version 3](http://tools.ietf.org/html/draft-cavage-http-signatures-03)
 
-Heavily inspired from (Authen::HTTP::Signature)[https://github.com/mrallen1/Authen-HTTP-Signature] on perl5
+Heavily inspired from [Authen::HTTP::Signature](https://github.com/mrallen1/Authen-HTTP-Signature) on perl5
 
 ```perl6
 use HTTP::Signature;

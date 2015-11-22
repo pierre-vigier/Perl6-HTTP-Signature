@@ -1,13 +1,12 @@
 use v6;
 use Test;
 
-plan 1;
+plan 2;
 
 use HTTP::Signature;
 use HTTP::Request;
 
-my $request-str = Q:b (POST /foo?param=value&pet=dog HTTP/1.1\r\nHost: example.com\r\nDate: Thu, 05 Jan 2012 21:31:40 GMT\r\nContent-Type: application/json\r\nContent-MD5: Sd/dVLAcvNLSq16eXua5uQ==\r\nContent-Length: 18\r\n\r\n{"hello": "world"});
-
+my $request-str = Q:b (POST /foo?param=value&pet=dog HTTP/1.1\r\nHost: example.com\r\nDate: Thu, 05 Jan 2012 21:31:40 GMT\r\nContent-Type: application/json\r\nContent-MD5: Sd/dVLAcvNLSq16eXua5uQ==\r\nContent-Length: 18\r\n\r\n{"hello": "world"}\r\n);
 my $private-key = q (
 -----BEGIN RSA PRIVATE KEY-----
 MIICXgIBAAKBgQDCFENGw33yGihy92pDjZQhl0C36rPJj+CvfSC8+q28hxA161QF
@@ -43,3 +42,14 @@ $request = $signer.sign-request( $request );
 my $authorization-header = $request.header.field('Authorization').Str;
 
 is $authorization-header, $expected-authorization-header, 'Default rsa-sha256, no header specified';
+
+$request = HTTP::Request.new;
+$request.parse($request-str);
+
+$signer.headers = <(request-target) host date content-type content-md5 content-length>;
+
+$request = $signer.sign-request( $request );
+
+$expected-authorization-header = 'Signature keyId="Test",algorithm="rsa-sha256",headers="(request-target) host date content-type content-md5 content-length", signature="G8/Uh6BBDaqldRi3VfFfklHSFoq8CMt5NUZiepq0q66e+fS3Up3BmXn0NbUnr3L1WgAAZGplifRAJqp2LgeZ5gXNk6UX9zV3hw5BERLWscWXlwX/dvHQES27lGRCvyFv3djHP6Plfd5mhPWRkmjnvqeOOSS0lZJYFYHJz994s6w="';
+
+is $request.header.field('Authorization').Str, $expected-authorization-header, "All headers specified";

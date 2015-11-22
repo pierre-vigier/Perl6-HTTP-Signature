@@ -1,16 +1,17 @@
 use DateTime::Format;
 use Digest::HMAC;
 use Digest::SHA;
-use Base64;
+use Digest;
+use MIME::Base64;
 use OpenSSL::RSATools;
 use HTTP::Request;
 
 unit class HTTP::Signature;
 
-has $.keyid;
-has $.secret;
-has $.algorithm = 'hmac-sha256';
-has @.headers = <date>;
+has $.keyid is rw ;
+has $.secret is rw ;
+has $.algorithm is rw = 'hmac-sha256';
+has @.headers is rw = <date>;
 
 has $!signing-string;
 has $!signature;
@@ -40,14 +41,13 @@ my grammar Signature::Grammar {
 
 method verify-request( HTTP::Request $request ) {
     $!signature = $request.field("Authorization").Str;
-    $!signature.say;
     my $match = Signature::Grammar.parse( $!signature );
-    ($match<keyid><value> , $match<algorithm><value> , $match<signature><value>).join(' | ').say;
-    for $match<headers><header>.flat -> $h {
-        say ~$h<value>;
-    }
     $!algorithm = ~$match<algorithm><value>;
-    @!headers = $match<headers><header>.flat.map( {~$_<value>} );
+    if $match<headers><header> {
+        @!headers = $match<headers><header>.flat.map( {~$_<value>} );
+    } else {
+        @!headers = <date>;
+    }
     $!signature = ~$match<signature><value>;
     self!generate_signing_string( $request );
 
@@ -61,7 +61,7 @@ method sign-request( HTTP::Request $request ) {
     }
 
     self!generate_signing_string( $request );
-    $!signature = encode-base64( self!sign(), :str );
+    $!signature = MIME::Base64.encode( self!sign(), :oneline );
     $request.header.field( :Authorization( self!format_signature()) );
 
     return $request;
@@ -69,10 +69,20 @@ method sign-request( HTTP::Request $request ) {
 
 method !verify {
     given $.algorithm {
-        when /hmac\-sha256/ { return True if $!signature eq hmac($.secret, $!signing-string, &sha256); }
+        when /hmac\-sha256/ { return True if MIME::Base64.decode($!signature) == hmac($.secret, $!signing-string, &sha256); }
+        when /hmac\-sha1/ { return True if MIME::Base64.decode($!signature) == hmac($.secret, $!signing-string, &sha1); }
+        when /hmac\-md5/ { return True if MIME::Base64.decode($!signature) == hmac($.secret, $!signing-string, &md5); }
         when /rsa\-sha256/ {
             my $rsa = OpenSSL::RSAKey.new(public-pem => $!secret);
-            return $rsa.verify( $!signing-string.encode, decode-base64($!signature, :buf) );
+            return $rsa.verify( ($!signing-string).encode,  MIME::Base64.decode($!signature), :sha256 );
+        }
+        when /rsa\-sha1/ {
+            my $rsa = OpenSSL::RSAKey.new(public-pem => $!secret);
+            return $rsa.verify( ($!signing-string).encode,  MIME::Base64.decode($!signature), :sha1 );
+        }
+        when /rsa\-md5/ {
+            my $rsa = OpenSSL::RSAKey.new(public-pem => $!secret);
+            return $rsa.verify( ($!signing-string).encode,  MIME::Base64.decode($!signature), :md5 );
         }
     }
     return False;
@@ -81,9 +91,19 @@ method !sign {
     my $signed;
     given $.algorithm {
         when /hmac\-sha256/ { $signed = hmac($.secret, $!signing-string, &sha256); }
+        when /hmac\-sha1/ { $signed = hmac($.secret, $!signing-string, &sha1); }
+        when /hmac\-md5/ { $signed = hmac($.secret, $!signing-string, &md5); }
         when /rsa\-sha256/ {
             my $rsa = OpenSSL::RSAKey.new(private-pem => $!secret);
             $signed = $rsa.sign( $!signing-string.encode, :sha256);
+        }
+        when /rsa\-sha1/ {
+            my $rsa = OpenSSL::RSAKey.new(private-pem => $!secret);
+            $signed = $rsa.sign( $!signing-string.encode, :sha1);
+        }
+        when /rsa\-md5/ {
+            my $rsa = OpenSSL::RSAKey.new(private-pem => $!secret);
+            $signed = $rsa.sign( $!signing-string.encode, :md5);
         }
     }
     return $signed;
@@ -110,7 +130,6 @@ method !format_signature {
 
 method !generate_signing_string( HTTP::Request $request ) {
     $!signing-string = (for @!headers -> $h {
-        say( "check header $h ");
         self!get_header($request,$h);
     }).join("\n");
 }

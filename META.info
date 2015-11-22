@@ -1,9 +1,9 @@
 {
     "name"          : "HTTP::Signature",
-    "version"       : "0.1.0",
+    "version"       : "0.1.1",
     "author"        : "github:pierre-vigier",
     "description"   : "HTTP Signature utility",
-    "depends"       : [ "DateTime::Format", "Digest::HMAC", "Digest::SHA", "Base64", "OpenSSL::RSATools", "HTTP::UserAgent"],
+    "depends"       : [ "DateTime::Format", "Digest::HMAC", "Digest::SHA", "Digest", "MIME::Base64", "OpenSSL::RSATools", "HTTP::UserAgent"],
     "provides" : {
         "HTTP::Signature"    : "lib/HTTP/Signature.pm6"
     },
