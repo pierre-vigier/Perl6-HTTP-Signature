@@ -143,3 +143,44 @@ method !get_header ( $req, $name ) {
         return sprintf "%s: %s", $name, $req.field($name).Str;
     }
 }
+
+=begin pod
+=head1 NAME
+HTTP::Signature - Implemetation of HTTP::Signature specification
+=head1 SYNOPSIS
+
+For signing a request:
+
+    use HTTP::Signature;
+    use HTTP::UserAgent;
+    use HTTP::Request;
+
+    my $req = HTTP::Request.new(
+        :GET('http://www.example.com/path')
+    );
+
+    my $signer = HTTP::Signature.new(
+        keyid       => 'Test',
+        secret      => 'MySuperSecretKey',
+        algorithm   => 'hmac-sha256',
+    );
+    my $signed-request = $signer->sign-request( $req );
+    my $ua = HTTP::UserAgent.new;
+    my $response = $ua.request( $signed-request );
+
+For verifying a request
+
+    use HTTP::Signature;
+
+    my $signer = HTTP::Signature.new(
+        secret      => 'MySuperSecretKey',
+    );
+    if $signer.verify-request( $req ) {
+        ...
+    }
+
+=head1 DESCRIPTION
+     ALPHA Implementation of http signature as defined in IETFF draft version 3
+=head1 METHODS
+
+=end pod

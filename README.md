@@ -9,6 +9,7 @@ Implementation of http signature as defined in [IETFF draft version 3](http://to
 
 Heavily inspired from [Authen::HTTP::Signature](https://github.com/mrallen1/Authen-HTTP-Signature) on perl5
 
+*To sign a request:*
 ```perl6
 use HTTP::Signature;
 use HTTP::UserAgent;
@@ -28,4 +29,16 @@ my $ua = HTTP::UserAgent.new;
 my $response = $ua.request( $signed-request );
 ```
 
+*To verify a request:*
+
+```perl6
+use HTTP::Signature;
+
+my $signer = HTTP::Signature.new(
+    secret      => 'MySuperSecretKey',
+);
+if $signer.verify-request( $req ) {
+    ...
+}
+```
 ## DESCRIPTION
